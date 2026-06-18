@@ -1,0 +1,93 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+\title{Buscador Semántico Simple \\ \large Proyecto de Investigación 2 - Álgebra Lineal para la Computación}
+\author{Paulo Villalobos}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+
+\section{Representación de palabras y documentos como vectores}
+
+\subsection{El Espacio Vectorial Textual}
+
+Si queremos que una computadora compare diferentes textos y decida si guardan alguna relación temática, nos enfrentamos al problema de que no es posible procesar las palabras directamente de forma cualitativa. De esta forma, el álgebra lineal nos ofrece una solución al permitirnos transformar cada palabra y cada documento en un vector. Como resultado, los textos pasan a ser puntos dentro de un espacio geométrico de muchas dimensiones, lo que permite obtener una representación matemática útil para medir su similitud.
+
+\subsubsection{El vocabulario y la dimensión del espacio}
+
+El proceso inicia tomando todos los textos de nuestro corpus (el conjunto de documentos) para someterlos a una limpieza o preprocesamiento que elimina puntuación, pasa todo a minúsculas, remueve acentos y quita palabras vacías como ``el'', ``un'' o ``de''. La lista que reúne todas las palabras únicas que sobreviven a esta limpieza termina representando nuestro \textbf{vocabulario}, al cual denotamos matemáticamente como:
+\[
+V = \{w_1, w_2, \dots, w_n\}
+\]
+donde $n$ terminaría siendo la cantidad total de palabras distintas que pudimos rescatar.
+
+La dimensión del espacio vectorial en el que vamos a trabajar se define a partir del tamaño de este vocabulario, por lo que diríamos que $\dim(\mathcal{V}) = n$. Detrás de esto se encuentra la idea de que cada palabra única del vocabulario puede interpretarse como una dimensión o eje coordenado independiente. Como resultado, si nuestro vocabulario final contara con $5000$ términos únicos, los documentos pasarían a representarse como vectores en el espacio real de $5000$ dimensiones, $\mathbb{R}^{5000}$.
+
+\subsubsection{Representación numérica de palabras y documentos}
+
+Para construir los vectores de cada documento, conviene entender primero cómo podemos estructurar algebraicamente las palabras individuales:
+
+\begin{enumerate}
+    \item \textbf{One-Hot Encoding (Codificación con un único uno)}: Es la forma más simple para vectorizar palabras individuales. A cada palabra $w_i \in V$ le asignamos un vector que tiene un valor de $1$ en la posición $i$ y ceros en todas las demás posiciones. De esta forma, cada palabra pasa a estar representada por un vector de la base canónica $\mathbf{e}_i$:
+    \[
+    \mathbf{e}_i = [0, \dots, 0, \underbrace{1}_{pos.\ i}, 0, \dots, 0]^T \in \mathbb{R}^n
+    \]
+    Al usar la base canónica, estamos asumiendo algebraicamente que todas las palabras son ortogonales entre sí. Esto implica que, en este punto, el modelo considera que las palabras son independientes entre sí, por lo que terminaría interpretando que ``fútbol'' y ``balompié'' son tan lejanas entre sí como lo serían ``fútbol'' y ``átomo''.
+    
+    \item \textbf{Bag-of-Words (Bolsa de Palabras)}: Consiste en crear el vector de un documento sumando los vectores de cada palabra que contiene. Aunque al hacer esto perdemos el orden de las palabras y la gramática, logramos mantener la información de qué palabras aparecen y cuántas veces lo hacen.
+    
+    \item \textbf{Frecuencia de Términos (TF - Term Frequency)}: Para esta representación, cada documento $d_j$ pasa a ser un vector $\mathbf{d}_j \in \mathbb{R}^n$ donde cada posición muestra cuántas veces aparece cada palabra del vocabulario en el texto. Esto se escribe matemáticamente como:
+    \[
+    \mathbf{d}_j = [f_{1j}, f_{2j}, \dots, f_{nj}]^T
+    \]
+    donde $f_{ij}$ terminaría siendo la cantidad de veces que la palabra $w_i$ aparece en el documento $d_j$.
+    
+    \textbf{Significado práctico y normalización}: Si usáramos los conteos directos de las palabras, los documentos más largos tendrían números mucho más altos simplemente por ser más largos. Esto produciría vectores con longitudes (normas) muy grandes, lo que afectaría las comparaciones. Por lo tanto, dividimos cada frecuencia entre el total de palabras que tiene el documento:
+    \[
+    \text{TF}(w_i, d_j) = \frac{f_{ij}}{\sum_{k=1}^n f_{kj}}
+    \]
+    De esta forma, cada coordenada pasa a mostrar qué tan importante es esa palabra en el texto en relación con las demás, lo que permite compararlos de manera justa.
+\end{enumerate}
+
+\subsubsection{Estructura y restricciones algebraicas}
+
+Aunque modelamos los vectores de los documentos dentro del espacio vectorial real $\mathbb{R}^n$, en la práctica nos topamos con un límite muy claro: no es posible que una palabra aparezca una cantidad negativa de veces en un texto. Por lo tanto, los números de nuestros vectores siempre terminan siendo mayores o iguales a cero ($\text{TF} \ge 0$).
+
+Como resultado, los vectores de documentos no ocupan todo el espacio $\mathbb{R}^n$, sino que se quedan en el \textbf{ortante no negativo} (que es el equivalente de más dimensiones al primer cuadrante que conocemos en el plano cartesiano $\mathbb{R}^2$), denotado como $\mathbb{R}^n_+$. Aunque tengamos este límite, usamos las reglas de $\mathbb{R}^n$ porque nos permiten realizar operaciones matemáticas muy útiles:
+\begin{itemize}
+    \item \textbf{Suma vectorial}: Si sumamos dos vectores de documentos, el vector que obtenemos termina representando la combinación de ambos textos, sumando las palabras que aparecen en ellos.
+    \item \textbf{Multiplicación por un escalar}: Si multiplicamos el vector de un documento por un número positivo $\alpha > 0$, cambiamos el largo del vector pero mantenemos las proporciones de sus palabras. De esta forma, el vector mantiene la misma dirección temática, cambiando solamente su tamaño.
+\end{itemize}
+
+\subsubsection{Interpretación geométrica}
+
+En este modelo (conocido como Modelo de Espacio Vectorial o VSM), cada documento puede interpretarse como una flecha (un vector de posición) que sale del origen $(0, 0, \dots, 0)$ y apunta hacia un punto en este espacio de $n$ dimensiones.
+
+De esta forma, la dirección de la flecha pasa a mostrar de qué habla el documento. Si dos textos usan palabras parecidas en proporciones similares, sus vectores van a apuntar en direcciones muy cercanas, formando un ángulo pequeño. En cambio, si no comparten ninguna palabra, sus vectores terminarán siendo perpendiculares u \textbf{ortogonales}, lo que significa que forman un ángulo de $90^\circ$.
+
+Esta mirada geométrica nos ayuda a entender por qué la distancia en línea recta (la distancia euclidiana) no funciona bien para comparar textos, ya que cambia mucho según qué tan largo sea el documento. En su lugar, preferimos medir qué tan parecidos son comparando el ángulo de los vectores, lo que nos lleva a usar la similitud coseno.
+
+\subsubsection{Dimensión del espacio y dispersión (Sparsity)}
+
+El uso de un vocabulario grande trae consigo dos efectos geométricos e informáticos que debemos tener en cuenta:
+
+\begin{enumerate}
+    \item \textbf{Alta dimensionalidad}: A medida que sumamos textos al proyecto, la dimensión $n$ del espacio vectorial crece rápidamente hasta tener miles de dimensiones. En espacios tan grandes, ocurre lo que se conoce como la ``maldición de la dimensionalidad'', donde las distancias en línea recta pierden su utilidad porque casi todos los vectores parecen estar a una distancia muy parecida entre sí. Como resultado, la dirección (el ángulo) pasa a ser una medida mucho más útil para comparar los textos.
+    
+    \item \textbf{Dispersión (Sparsity)}: Aunque el espacio vectorial tenga $10000$ dimensiones por el tamaño del vocabulario, un documento común y corriente solo va a usar unas 50 o 100 palabras únicas. Por lo tanto, casi todas las coordenadas del vector $\mathbf{d}_j$ terminarán siendo iguales a cero. De esta forma, obtenemos vectores altamente \textbf{dispersos} (o \emph{sparse}). Para la programación, esto es una ventaja enorme, ya que nos permite guardar y procesar únicamente los números distintos de cero, lo que ahorra mucha memoria y tiempo de cálculo.
+\end{enumerate}
+
+\end{document}
