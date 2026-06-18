@@ -90,4 +90,28 @@ El uso de un vocabulario grande trae consigo dos efectos geométricos e informá
     \item \textbf{Dispersión (Sparsity)}: Aunque el espacio vectorial tenga $10000$ dimensiones por el tamaño del vocabulario, un documento común y corriente solo va a usar unas 50 o 100 palabras únicas. Por lo tanto, casi todas las coordenadas del vector $\mathbf{d}_j$ terminarán siendo iguales a cero. De esta forma, obtenemos vectores altamente \textbf{dispersos} (o \emph{sparse}). Para la programación, esto es una ventaja enorme, ya que nos permite guardar y procesar únicamente los números distintos de cero, lo que ahorra mucha memoria y tiempo de cálculo.
 \end{enumerate}
 
+\subsection{La Similitud Coseno}
+
+Si ya tenemos los documentos transformados en vectores dentro de nuestro espacio de vocabulario, el siguiente paso es encontrar una forma matemática para medir qué tan parecidos son entre sí. Para esto, la herramienta que nos proporciona la geometría es la similitud coseno. En lugar de comparar los textos por la cantidad total de palabras, esta medida se enfoca en evaluar la dirección de los vectores. La similitud coseno del ángulo $\theta$ formado entre dos vectores $\mathbf{u}$ y $\mathbf{v}$ se calcula usando la siguiente relación:
+\[
+\cos(\theta) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\| \|\mathbf{v}\|}
+\]
+donde el numerador $\mathbf{u} \cdot \mathbf{v}$ terminaría representando el producto punto (la suma de los productos de cada coordenada), lo que nos indica las palabras que tienen en común. Por otro lado, el denominador $\|\mathbf{u}\| \|\mathbf{v}\|$ muestra la multiplicación del largo o magnitud de ambos vectores.
+
+\subsubsection{Coseno frente a la distancia euclidiana}
+
+Una pregunta natural que surge en este punto es por qué preferimos calcular el coseno del ángulo en lugar de usar la distancia en línea recta (distancia euclidiana) para comparar los textos. La razón de esta elección tiene que ver con la longitud de los documentos. Si tuviéramos un documento corto y un documento largo que hablan exactamente del mismo tema (por ejemplo, fútbol), el documento largo usaría las palabras con frecuencias mucho más altas. Como resultado, su vector terminaría siendo mucho más largo, situando su punto muy lejos en el espacio en comparación con el vector del documento corto. 
+
+Si usáramos la distancia euclidiana, esta diferencia de largo produciría una distancia muy grande entre ambos puntos, lo que nos llevaría a pensar que son textos muy diferentes, lo que afectaría la precisión de la búsqueda. Al usar la similitud coseno, el cálculo ignora por completo el largo de los vectores y evalúa únicamente la dirección de las flechas. De esta forma, logramos comparar los textos por su temática sin importar si uno es mucho más largo que el otro.
+
+\subsubsection{Interpretación geométrica del ángulo y rango de valores}
+
+El ángulo $\theta$ entre los vectores nos da una interpretación geométrica muy directa de la relación entre los documentos, lo que se traduce en un rango de valores específico:
+\begin{itemize}
+    \item \textbf{Coseno igual a 1}: Ocurre cuando el ángulo es de $0^\circ$, lo que implica que ambos vectores apuntan exactamente en la misma dirección. Este valor máximo indica que los documentos comparten las mismas palabras en proporciones similares.
+    \item \textbf{Coseno igual a 0}: Ocurre cuando el ángulo es de $90^\circ$. En este caso, los vectores terminan siendo perpendiculares u \textbf{ortogonales}, lo que significa que los documentos no comparten ni una sola palabra de nuestro vocabulario y, por lo tanto, no tienen ninguna relación temática.
+    \item \textbf{Coseno igual a -1}: Ocurre cuando el ángulo es de $180^\circ$, lo que indicaría que los vectores apuntan en direcciones opuestas. Sin embargo, dado que en el análisis de textos trabajamos en el ortante no negativo $\mathbb{R}^n_+$, es imposible que una palabra tenga una frecuencia negativa. Como resultado, los vectores nunca pueden apuntar en direcciones opuestas, lo que significa que la similitud coseno en nuestro buscador semántico queda limitada estrictamente al rango entre $0$ y $1$.
+\end{itemize}
+
 \end{document}
+
