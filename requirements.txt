@@ -1,0 +1,6 @@
+numpy
+matplotlib
+seaborn
+jupyter
+pytest
+scikit-learn   # solo para validacion cruzada en el notebook, no en el codigo principal
