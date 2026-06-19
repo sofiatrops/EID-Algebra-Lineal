@@ -9,20 +9,5 @@ def search(corpus_tokens, query_tokens, method="tf" , top_k=5) -> list[tuple[int
     for i in range(len(matriz)):
         sim=cosine_similarity(query_vector,matriz[i])
         scores.append((i,sim))
-    scores_descendente=sorted(scores,key=lambda x: x[1], reverse=True)[:top_k]
+    scores_descendente=sorted(scores,key=lambda x: x[1], reverse=True)[:top_k] #Ordenamos desde el mayor score hasta el menor (key para agarrar el score)
     return scores_descendente
-    
-if __name__ == "__main__":
-    corpus = [
-        ["algebra", "lineal", "vectores", "matrices"],
-        ["buscador", "texto", "palabras", "busqueda"],
-        ["algebra", "vectores", "busqueda", "computacion"],
-        ["redes", "computacion", "sistemas", "datos"],
-        ["texto", "palabras", "documentos", "busqueda"],
-    ]
-
-    query = ["algebra", "vectores"]
-
-    resultados = search(corpus, query, method="tf", top_k=3)
-    print("Resultados:")
-    print(resultados)
