@@ -10,7 +10,7 @@
 \usepackage{graphicx}
 
 \title{Buscador Semántico Simple \\ \large Proyecto de Investigación 2 - Álgebra Lineal para la Computación}
-\author{Paulo Villalobos}
+\author{Denys Rodríguez, Paulo Villalobos, Joaquín Valenzuela, David}
 \date{\today}
 
 \begin{document}
@@ -104,11 +104,13 @@ Una pregunta natural que surge en este punto es por qué preferimos calcular el 
 
 Si usáramos la distancia euclidiana, esta diferencia de largo produciría una distancia muy grande entre ambos puntos, lo que nos llevaría a pensar que son textos muy diferentes, lo que afectaría la precisión de la búsqueda. Al usar la similitud coseno, el cálculo ignora por completo el largo de los vectores y evalúa únicamente la dirección de las flechas. De esta forma, logramos comparar los textos por su temática sin importar si uno es mucho más largo que el otro.
 
+\textbf{Nota sobre la normalización}: Dado que la fórmula de la similitud coseno ya divide el producto punto por el largo de los vectores, realiza su propia normalización geométrica. Esto significa que el resultado final del coseno será exactamente idéntico ya sea que calculemos la fórmula usando conteos crudos de palabras o usando las frecuencias relativas (TF) previamente normalizadas. Sin embargo, decidimos aplicar la normalización TF en un paso previo porque nos permite que los vectores individuales tengan un significado por sí mismos (mostrando la proporción de cada palabra en el texto) y para mantener la coherencia con el procesamiento interno del código del buscador.
+
 \subsubsection{Interpretación geométrica del ángulo y rango de valores}
 
 El ángulo $\theta$ entre los vectores nos da una interpretación geométrica muy directa de la relación entre los documentos, lo que se traduce en un rango de valores específico:
 \begin{itemize}
-    \item \textbf{Coseno igual a 1}: Ocurre cuando el ángulo es de $0^\circ$, lo que implica que ambos vectores apuntan exactamente en la misma dirección. Este valor máximo indica que los documentos comparten las mismas palabras en proporciones similares.
+    \item \textbf{Coseno igual a 1}: Ocurre cuando el ángulo es de $0^\circ$, lo que implica que ambos vectores apuntan exactamente en la misma dirección. Este valor máximo indica que los documentos comparten las mismas palabras en exactamente las mismas proporciones.
     \item \textbf{Coseno igual a 0}: Ocurre cuando el ángulo es de $90^\circ$. En este caso, los vectores terminan siendo perpendiculares u \textbf{ortogonales}, lo que significa que los documentos no comparten ni una sola palabra de nuestro vocabulario y, por lo tanto, no tienen ninguna relación temática.
     \item \textbf{Coseno igual a -1}: Ocurre cuando el ángulo es de $180^\circ$, lo que indicaría que los vectores apuntan en direcciones opuestas. Sin embargo, dado que en el análisis de textos trabajamos en el ortante no negativo $\mathbb{R}^n_+$, es imposible que una palabra tenga una frecuencia negativa. Como resultado, los vectores nunca pueden apuntar en direcciones opuestas, lo que significa que la similitud coseno en nuestro buscador semántico queda limitada estrictamente al rango entre $0$ y $1$.
 \end{itemize}
