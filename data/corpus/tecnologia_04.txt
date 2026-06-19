@@ -1,0 +1,1 @@
+Python es un lenguaje de programacion ampliamente utilizado en ciencia de datos y aprendizaje automatico. Bibliotecas como NumPy proporcionan herramientas eficientes para trabajar con arreglos numericos y realizar calculos matematicos.
