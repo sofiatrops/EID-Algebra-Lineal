@@ -1,0 +1,1 @@
+El procesamiento de lenguaje natural permite a las computadoras entender y generar texto humano. Tecnicas como la vectorizacion de palabras convierten el texto en numeros que las maquinas pueden procesar eficientemente.

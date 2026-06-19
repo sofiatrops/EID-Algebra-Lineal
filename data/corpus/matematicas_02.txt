@@ -1,0 +1,1 @@
+Una matriz es un arreglo rectangular de numeros dispuestos en filas y columnas. La multiplicacion de matrices es una operacion clave que permite componer transformaciones lineales y resolver sistemas de ecuaciones.

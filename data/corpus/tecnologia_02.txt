@@ -1,0 +1,1 @@
+Los motores de busqueda como Google indexan millones de paginas web y utilizan algoritmos de ranking para mostrar los resultados mas relevantes. La recuperacion de informacion es un area clave de la ciencia de la computacion.

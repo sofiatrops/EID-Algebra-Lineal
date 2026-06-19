@@ -1,0 +1,1 @@
+La similaridad del coseno mide la semejanza entre dos vectores calculando el coseno del angulo que forman. Esta metrica es utilizada en motores de busqueda para comparar documentos y determinar su relevancia.
