@@ -113,5 +113,78 @@ El ángulo $\theta$ entre los vectores nos da una interpretación geométrica mu
     \item \textbf{Coseno igual a -1}: Ocurre cuando el ángulo es de $180^\circ$, lo que indicaría que los vectores apuntan en direcciones opuestas. Sin embargo, dado que en el análisis de textos trabajamos en el ortante no negativo $\mathbb{R}^n_+$, es imposible que una palabra tenga una frecuencia negativa. Como resultado, los vectores nunca pueden apuntar en direcciones opuestas, lo que significa que la similitud coseno en nuestro buscador semántico queda limitada estrictamente al rango entre $0$ y $1$.
 \end{itemize}
 
+\subsection{Ejemplo numérico desarrollado}
+
+Para ilustrar de forma práctica cómo funcionan estos conceptos de álgebra lineal en la comparación de textos, vamos a desarrollar un ejemplo completo paso a paso usando dos documentos muy sencillos creados para este fin:
+\begin{itemize}
+    \item Documento 1 ($d_1$): ``el gato come pescado''
+    \item Documento 2 ($d_2$): ``el perro come carne''
+\end{itemize}
+
+\subsubsection{Preprocesamiento y construcción del vocabulario}
+
+Antes de construir los vectores, debemos limpiar los documentos. En este caso, eliminamos la palabra ``el'' por ser una palabra vacía (stopword) que no aporta significado temático. Como resultado de esta limpieza, los textos quedan reducidos a los siguientes términos:
+\begin{itemize}
+    \item Documento 1 ($d_1$): \{gato, come, pescado\}
+    \item Documento 2 ($d_2$): \{perro, come, carne\}
+\end{itemize}
+
+Al reunir todas las palabras únicas de ambos textos y ordenarlas alfabéticamente, obtenemos el vocabulario $V$:
+\[
+V = \{\text{carne}, \text{come}, \text{gato}, \text{perro}, \text{pescado}\}
+\]
+donde el tamaño de nuestro vocabulario terminaría siendo $n = 5$. Esto implica que trabajaremos en un espacio vectorial de cinco dimensiones, $\mathbb{R}^5$.
+
+\subsubsection{Construcción de los vectores TF}
+
+Con el vocabulario ordenado, pasamos a representar cada documento como un vector, contando la presencia de cada palabra y normalizando el resultado según el total de términos de cada documento (que en ambos casos es igual a 3):
+
+Para el Documento 1 ($d_1$), las palabras ``come'', ``gato'' y ``pescado'' aparecen una vez, mientras que ``carne'' y ``perro'' no aparecen. De esta forma, el vector normalizado $\mathbf{d}_1$ pasa a ser:
+\[
+\mathbf{d}_1 = \left[ 0, \frac{1}{3}, \frac{1}{3}, 0, \frac{1}{3} \right]^T
+\]
+
+Para el Documento 2 ($d_2$), las palabras ``carne'', ``come'' y ``perro'' aparecen una vez, mientras que ``gato'' y ``pescado'' no aparecen. Esto nos permite generar el vector normalizado $\mathbf{d}_2$:
+\[
+\mathbf{d}_2 = \left[ \frac{1}{3}, \frac{1}{3}, 0, \frac{1}{3}, 0 \right]^T
+\]
+
+\subsubsection{Cálculo del producto punto a mano}
+
+Para calcular el producto punto entre ambos vectores, multiplicamos sus componentes correspondientes y sumamos los resultados:
+\[
+\mathbf{d}_1 \cdot \mathbf{d}_2 = \left(0 \times \frac{1}{3}\right) + \left(\frac{1}{3} \times \frac{1}{3}\right) + \left(\frac{1}{3} \times 0\right) + \left(0 \times \frac{1}{3}\right) + \left(\frac{1}{3} \times 0\right)
+\]
+\[
+\mathbf{d}_1 \cdot \mathbf{d}_2 = 0 + \frac{1}{9} + 0 + 0 + 0 = \frac{1}{9}
+\]
+El producto punto da como resultado $\frac{1}{9}$, lo que muestra la coincidencia de la palabra ``come'' (la única coordenada donde ambos vectores tienen valores distintos de cero).
+
+\subsubsection{Cálculo de las normas a mano}
+
+Para calcular la norma (o longitud) de cada vector, elevamos al cuadrado cada componente, sumamos estos valores y obtenemos la raíz cuadrada del resultado:
+
+Para el vector $\mathbf{d}_1$:
+\[
+\|\mathbf{d}_1\| = \sqrt{0^2 + \left(\frac{1}{3}\right)^2 + \left(\frac{1}{3}\right)^2 + 0^2 + \left(\frac{1}{3}\right)^2} = \sqrt{\frac{1}{9} + \frac{1}{9} + \frac{1}{9}} = \sqrt{\frac{3}{9}} = \sqrt{\frac{1}{3}} = \frac{1}{\sqrt{3}} \approx 0.577
+\]
+
+Para el vector $\mathbf{d}_2$, el procedimiento es el mismo al tener la misma cantidad de palabras:
+\[
+\|\mathbf{d}_2\| = \sqrt{\left(\frac{1}{3}\right)^2 + \left(\frac{1}{3}\right)^2 + 0^2 + \left(\frac{1}{3}\right)^2 + 0^2} = \sqrt{\frac{1}{9} + \frac{1}{9} + \frac{1}{9}} = \sqrt{\frac{3}{9}} = \sqrt{\frac{1}{3}} = \frac{1}{\sqrt{3}} \approx 0.577
+\]
+
+\subsubsection{Resultado del coseno y su interpretación}
+
+Una vez calculados el producto punto y las normas, usamos la fórmula de la similitud coseno para obtener el valor final:
+\[
+\cos(\theta) = \frac{\mathbf{d}_1 \cdot \mathbf{d}_2}{\|\mathbf{d}_1\| \|\mathbf{d}_2\|} = \frac{\frac{1}{9}}{\left(\frac{1}{\sqrt{3}}\right) \times \left(\frac{1}{\sqrt{3}}\right)} = \frac{\frac{1}{9}}{\frac{1}{3}} = \frac{3}{9} = \frac{1}{3} \approx 0.333
+\]
+
+El valor obtenido para la similitud coseno termina siendo exactamente $\frac{1}{3} \approx 0.333$. Dado que el rango de la similitud coseno va desde $0$ hasta $1$ en nuestro espacio de documentos, este resultado muestra una coincidencia baja o moderada entre los textos.
+
+Geométricamente, esto significa que los vectores están separados por un ángulo de aproximadamente $70.5^\circ$ ($\arccos(0.333) \approx 70.5^\circ$). Desde el punto de vista del significado, el resultado es coherente: ambos documentos comparten únicamente la acción (la palabra ``come''), pero difieren en el sujeto (``gato'' frente a ``perro'') y en el objeto (``pescado'' frente a ``carne''). De esta forma, el modelo matemático es capaz de identificar que los textos guardan cierta relación, pero que no son idénticos.
+
 \end{document}
+
 
