@@ -1,5 +1,5 @@
-from vectorizer import build_vocabulary, build_tf_matrix
-from core.similarity import cosine_similarity  
+from src.core.vectorizer import build_vocabulary, build_tf_matrix
+from src.core.similarity import cosine_similarity
 
 def search(corpus_tokens, query_tokens, method="tf" , top_k=5) -> list[tuple[int, float]]:
     vocabulary=build_vocabulary(corpus_tokens)
