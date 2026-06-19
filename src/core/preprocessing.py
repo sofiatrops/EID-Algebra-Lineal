@@ -41,9 +41,3 @@ def remove_stopwords(tokens,stopwords=STOPWORDS) -> list[str]:
 
 def preprocess(text:str,stopword=STOPWORDS) -> list[str]:
     return remove_stopwords(tokenize(normalize(text)),stopword)
-    
-
-text1="Álgebra a Líneal para Computación"
-text2="El niño comió jamón con ñoquerías"
-text3="PROCESAMIENTO de TEXTO con Tildes: á, é, í, ó, ú"
-print(preprocess(text3))
