@@ -1,0 +1,1 @@
+La inteligencia artificial permite a las maquinas aprender y realizar tareas que normalmente requieren inteligencia humana. Los algoritmos de aprendizaje automatico analizan grandes cantidades de datos para encontrar patrones significativos.

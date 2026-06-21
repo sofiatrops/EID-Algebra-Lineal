@@ -1,0 +1,1 @@
+El producto punto entre dos vectores produce un numero escalar que mide que tanto se alinean los vectores entre si. Cuando el producto punto es cero los vectores son ortogonales y forman un angulo recto de noventa grados.

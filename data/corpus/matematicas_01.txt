@@ -1,0 +1,1 @@
+El algebra lineal es una rama de las matematicas que estudia los espacios vectoriales y las transformaciones lineales. Los vectores y las matrices son herramientas fundamentales para representar y manipular datos en este campo.
