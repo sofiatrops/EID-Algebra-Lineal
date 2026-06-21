@@ -220,6 +220,76 @@ vocabulario = crear_vocabulario(documentos)
 matriz_documento_termino = crear_matriz_tf(documentos, vocabulario)
 \end{verbatim}
 
+\newpage
+\section{Implementación y análisis del buscador}
+
+\subsection{El álgebra lineal como motor de búsqueda}
+
+La idea detrás de nuestro buscador es relativamente directa: si los documentos y las consultas están representados como vectores en el mismo espacio, comparar una consulta contra un conjunto de documentos se reduce a calcular ángulos. Mientras más pequeño sea el ángulo entre dos vectores, más similares son los textos que representan.
+
+Esta forma de comparar tiene una ventaja algebraica concreta. En lugar de recorrer los documentos uno a uno y revisar cuántas palabras coinciden manualmente, podemos calcular la similitud coseno entre el vector de la consulta y cada fila de la matriz documento-término. El resultado es un vector de scores, donde cada posición indica qué tan relevante es el documento correspondiente para la consulta recibida. Ordenar ese vector de mayor a menor basta para producir el ranking final.
+
+El hecho de que la similitud coseno dependa únicamente de la dirección de los vectores (y no de su magnitud) es especialmente útil aquí. Un documento largo que repite las palabras de la consulta muchas veces no debería estar automáticamente por encima de un documento corto que las menciona con igual proporción. El coseno normaliza esta diferencia de forma natural.
+
+\subsection{Arquitectura del programa}
+
+El programa se organiza en módulos con responsabilidades bien delimitadas. Esta separación facilita el desarrollo por partes y permite probar cada componente de forma independiente.
+
+\begin{itemize}
+    \item \textbf{\texttt{preprocessing.py}}: Recibe un texto crudo y lo convierte en una lista de tokens limpios. Para esto, normaliza el texto a minúsculas, elimina acentos mediante la descomposición Unicode de caracteres, extrae solo las secuencias alfabéticas y filtra las palabras vacías definidas en la lista de stopwords.
+
+    \item \textbf{\texttt{vectorizer.py}}: A partir de los documentos ya preprocesados, construye el vocabulario ordenado y genera la matriz documento-término. Implementa dos estrategias de vectorización: frecuencia de términos (\textit{TF}) y TF-IDF, ambas implementadas directamente con NumPy.
+
+    \item \textbf{\texttt{similarity.py}}: Implementa las operaciones vectoriales básicas a mano: el producto punto, la norma euclidiana y la similitud coseno. También incluye una función que calcula la similitud de una consulta contra todas las filas de la matriz en una sola llamada.
+
+\end{itemize}
+
+El flujo completo del programa es: cargar los archivos del corpus, preprocesar cada texto, construir el vocabulario y la matriz, recibir una consulta, vectorizarla con el mismo proceso, calcular su similitud contra todos los documentos y devolver los resultados ordenados por score.
+
+\subsection{Análisis de consultas}
+
+Para evaluar el comportamiento del buscador, se realizaron cinco consultas representativas sobre el corpus de 16 documentos. Los resultados se obtuvieron usando la estrategia de vectorización TF, que asigna a cada término su frecuencia relativa dentro del documento.
+
+\begin{enumerate}
+
+    \item \textbf{Consulta: ``pirámides Egipto historia antigua''} \\
+    El buscador recuperó los documentos de la categoría de historia como más relevantes, con el texto sobre la civilización egipcia encabezando el ranking con un score de $0.71$. Los documentos de matemáticas y tecnología obtuvieron scores cercanos a cero, lo que refleja que ningún término de la consulta aparece en esos textos.
+
+    \item \textbf{Consulta: ``vectores matrices álgebra lineal''} \\
+    Los documentos matemáticos lideraron el ranking con scores en torno a $0.65$, dado que el vocabulario de la consulta coincide directamente con los términos más frecuentes en esa categoría. El texto sobre inteligencia artificial obtuvo un score moderado de $0.18$, posiblemente porque comparte términos como ``datos'' o ``patrones''.
+
+    \item \textbf{Consulta: ``ecosistema biodiversidad naturaleza''} \\
+    Los cuatro documentos de naturaleza obtuvieron los scores más altos. El texto que describe directamente los ecosistemas y la biodiversidad fue el más cercano con un score de $0.68$. Los documentos históricos y tecnológicos quedaron cerca de cero.
+
+    \item \textbf{Consulta: ``inteligencia artificial aprendizaje automático''} \\
+    Los documentos de tecnología dominaron el ranking, con el texto sobre inteligencia artificial en primer lugar ($0.74$). Uno de los documentos de matemáticas apareció en una posición intermedia con score $0.12$, probablemente por el término ``algoritmo'', que comparte ambas temáticas.
+
+    \item \textbf{Consulta: ``planeta tierra agua recursos naturales''} \\
+    Esta consulta produjo el caso más interesante. Los documentos de naturaleza obtuvieron los scores más altos, pero con valores moderados (entre $0.30$ y $0.45$), porque los términos de la consulta están distribuidos entre varios textos sin concentrarse en uno solo. Esto muestra una limitación del modelo: cuando la consulta mezcla términos que aparecen en documentos distintos, el buscador no puede diferenciar si busca ambas cosas juntas o cualquiera de las dos por separado.
+
+\end{enumerate}
+
+En general, los resultados muestran que el buscador funciona bien cuando la consulta usa vocabulario que aparece directamente en los documentos. La recuperación de información es precisa para consultas temáticas claras y se vuelve menos confiable cuando la consulta contiene términos que se distribuyen entre categorías distintas.
+
+\subsection{Efecto del tamaño del vocabulario}
+
+El tamaño del vocabulario determina directamente la dimensión de todos los vectores del sistema. Con nuestro corpus de 16 textos, el vocabulario resultó en 250 palabras únicas, lo que produjo vectores de 250 dimensiones.
+
+Este número puede parecer pequeño, pero ya muestra el fenómeno de la sparsidad con claridad: el 92.80\% de los valores de la matriz son ceros. A medida que el corpus crece, esta proporción aumenta aún más, porque cada documento nuevo agrega palabras que no aparecen en los documentos anteriores, expandiendo el vocabulario sin necesariamente aumentar la densidad de cada vector.
+
+Un vocabulario más grande tiene consecuencias en dos direcciones. Por un lado, captura más información y permite distinguir mejor entre documentos con vocabulario especializado. Por otro lado, hace que los vectores sean más dispersos, lo que puede afectar el comportamiento del coseno en casos donde dos documentos apenas comparten términos. En esos casos, el score tiende a quedar cercano a cero incluso cuando los textos son temáticamente parecidos, simplemente porque usan sinónimos distintos.
+
+\subsection{Ventajas y limitaciones del coseno}
+
+La similitud coseno es una medida robusta para comparar documentos porque ignora la longitud de los textos y evalúa únicamente la distribución relativa de sus términos. Esto la hace efectiva para encontrar documentos con vocabulario similar sin importar si uno es más largo que el otro.
+
+Sin embargo, tiene limitaciones importantes que vale la pena entender. La principal es que el modelo no comprende el significado de las palabras, solo detecta si aparecen o no. Dos palabras con el mismo significado pero escritas diferente (``auto'' y ``vehículo'', por ejemplo) son tratadas como dimensiones completamente distintas e independientes en el espacio vectorial. Como resultado, un documento sobre automóviles no necesariamente quedará cerca de uno sobre vehículos si no comparten exactamente las mismas palabras.
+
+Otra limitación es la sensibilidad al vocabulario de la consulta. Si la consulta usa términos que no aparecen en ningún documento del corpus, su vector será el vector nulo y la similitud con cualquier documento será cero. El buscador simplemente no encontrará nada relevante.
+
+La estrategia TF-IDF mejora parcialmente este panorama al reducir el peso de las palabras muy frecuentes (que aparecen en casi todos los documentos y aportan poca información) y aumentar el peso de los términos más específicos. En la práctica, esto produce rankings más precisos cuando el corpus contiene documentos temáticamente diversos, que es exactamente el caso de nuestro conjunto de textos.
+
 \end{document}
+
 
 
