@@ -302,23 +302,23 @@ Para evaluar el comportamiento del buscador, se realizaron cinco consultas repre
 \begin{enumerate}
 
     \item \textbf{Consulta: ``pirámides Egipto historia antigua''} \\
-    El buscador recuperó los documentos de la categoría de historia como más relevantes, con el texto sobre la civilización egipcia encabezando el ranking con un score de $0.71$. Los documentos de matemáticas y tecnología obtuvieron scores cercanos a cero, lo que refleja que ningún término de la consulta aparece en esos textos.
+    El buscador devolvió primero el texto del Imperio Romano (\texttt{historia\_02}) con un score de $0.26$, seguido del texto de la civilización egipcia (\texttt{historia\_01}) con $0.14$; el resto del corpus quedó en cero. Llama la atención que el texto romano gane al egipcio aunque la consulta menciona ``pirámides'' y ``Egipto''. La razón es reveladora: las palabras ``historia'' y ``antigua'' aparecen juntas y literales en el texto romano, mientras que ``Egipto'' nunca aparece como tal (el texto dice ``egipcia'' y ``egipcios'', que para el modelo son palabras distintas). Este caso muestra con claridad que el buscador empareja formas exactas de palabras, no temas ni significados.
 
     \item \textbf{Consulta: ``vectores matrices álgebra lineal''} \\
-    Los documentos matemáticos lideraron el ranking con scores en torno a $0.65$, dado que el vocabulario de la consulta coincide directamente con los términos más frecuentes en esa categoría. El texto sobre inteligencia artificial obtuvo un score moderado de $0.18$, posiblemente porque comparte términos como ``datos'' o ``patrones''.
+    Los cuatro documentos de matemáticas ocuparon las primeras posiciones, con \texttt{matematicas\_01} a la cabeza ($0.47$), seguido de \texttt{matematicas\_03} ($0.27$), \texttt{matematicas\_02} ($0.12$) y \texttt{matematicas\_04} ($0.11$). Ningún documento de otra categoría obtuvo un valor distinto de cero. Este es el comportamiento ideal: la consulta usa el vocabulario propio del tema y el modelo separa limpiamente esa categoría del resto.
 
     \item \textbf{Consulta: ``ecosistema biodiversidad naturaleza''} \\
-    Los cuatro documentos de naturaleza obtuvieron los scores más altos. El texto que describe directamente los ecosistemas y la biodiversidad fue el más cercano con un score de $0.68$. Los documentos históricos y tecnológicos quedaron cerca de cero.
+    Solo un documento obtuvo un score distinto de cero: \texttt{naturaleza\_01} con $0.25$. Los otros tres textos de naturaleza quedaron en cero, lo que al principio sorprende. La explicación vuelve a estar en las formas de las palabras: el texto dice ``ecosistemas'' (plural) y ``naturales'', pero la consulta usa ``ecosistema'' y ``naturaleza'', que el modelo trata como términos diferentes. Al final, lo único que coincidió de verdad fue ``biodiversidad''. Esto deja en evidencia que el buscador es sensible incluso a detalles como el singular y el plural, porque no aplica ninguna reducción de las palabras a su raíz.
 
     \item \textbf{Consulta: ``inteligencia artificial aprendizaje automático''} \\
-    Los documentos de tecnología dominaron el ranking, con el texto sobre inteligencia artificial en primer lugar ($0.74$). Uno de los documentos de matemáticas apareció en una posición intermedia con score $0.12$, probablemente por el término ``algoritmo'', que comparte ambas temáticas.
+    Los documentos de tecnología dominaron el ranking, con \texttt{tecnologia\_01} en primer lugar ($0.52$) y \texttt{tecnologia\_04} en segundo ($0.22$); el resto quedó en cero. Probamos esta misma consulta con TF y con TF-IDF y el ranking fue idéntico, lo que tiene sentido en un corpus tan chico: como casi ningún término aparece en muchos documentos a la vez, la penalización que aplica TF-IDF a las palabras comunes casi no cambia el resultado.
 
     \item \textbf{Consulta: ``planeta tierra agua recursos naturales''} \\
-    Esta consulta produjo el caso más interesante. Los documentos de naturaleza obtuvieron los scores más altos, pero con valores moderados (entre $0.30$ y $0.45$), porque los términos de la consulta están distribuidos entre varios textos sin concentrarse en uno solo. Esto muestra una limitación del modelo: cuando la consulta mezcla términos que aparecen en documentos distintos, el buscador no puede diferenciar si busca ambas cosas juntas o cualquiera de las dos por separado.
+    Los documentos de naturaleza volvieron a quedar arriba: \texttt{naturaleza\_01} con $0.43$ y \texttt{naturaleza\_03} con $0.14$, con el resto del corpus en cero. El score del primero es relativamente alto porque concentra varias de las palabras de la consulta (``planeta'', ``tierra''), mientras que las demás coincidencias se reparten en otros textos. Esto muestra una limitación del modelo: cuando la consulta mezcla términos que aparecen en documentos distintos, el buscador no puede distinguir si se busca todo junto o cada cosa por separado.
 
 \end{enumerate}
 
-En general, los resultados muestran que el buscador funciona bien cuando la consulta usa vocabulario que aparece directamente en los documentos. La recuperación de información es precisa para consultas temáticas claras y se vuelve menos confiable cuando la consulta contiene términos que se distribuyen entre categorías distintas.
+En general, los resultados muestran que el buscador funciona bien cuando la consulta usa exactamente el vocabulario que aparece en los documentos: en las cinco consultas, el tema correcto quedó siempre en primer lugar y las categorías ajenas se fueron a cero. Los scores no son altos (rara vez pasan de $0.5$) porque las consultas son cortas y comparten pocas palabras con textos que hablan de muchas cosas, pero el orden relativo es el esperado. La recuperación se vuelve menos confiable apenas la consulta usa una forma distinta de una palabra (singular en vez de plural, o un sinónimo), lo que confirma que el modelo compara palabras y no significados.
 
 \subsection{Efecto del tamaño del vocabulario}
 
@@ -336,7 +336,7 @@ Sin embargo, tiene limitaciones importantes que vale la pena entender. La princi
 
 Otra limitación es la sensibilidad al vocabulario de la consulta. Si la consulta usa términos que no aparecen en ningún documento del corpus, su vector será el vector nulo y la similitud con cualquier documento será cero. El buscador simplemente no encontrará nada relevante.
 
-La estrategia TF-IDF mejora parcialmente este panorama al reducir el peso de las palabras muy frecuentes (que aparecen en casi todos los documentos y aportan poca información) y aumentar el peso de los términos más específicos. En la práctica, esto produce rankings más precisos cuando el corpus contiene documentos temáticamente diversos, que es exactamente el caso de nuestro conjunto de textos.
+La estrategia TF-IDF busca mejorar este panorama al reducir el peso de las palabras muy frecuentes (que aparecen en casi todos los documentos y aportan poca información) y aumentar el peso de los términos más específicos. En teoría, esto produce rankings más precisos cuando el corpus contiene documentos temáticamente diversos. En la práctica, al comparar TF y TF-IDF sobre nuestro corpus, los rankings resultaron casi iguales. Esto se explica por el tamaño reducido del conjunto: como casi ningún término aparece repartido en muchos documentos a la vez, el factor IDF apenas castiga a unas pocas palabras y el resultado se mantiene parecido al de TF. Es razonable esperar que la diferencia se note más en un corpus grande, donde sí existen palabras muy comunes a lo largo de todos los textos.
 
 \subsection{Visualización de los resultados}
 
