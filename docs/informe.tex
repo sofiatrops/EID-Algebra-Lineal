@@ -10,7 +10,7 @@
 \usepackage{graphicx}
 
 \title{Buscador Semántico Simple \\ \large Proyecto de Investigación 2 - Álgebra Lineal para la Computación}
-\author{Paulo Villalobos}
+\author{Denys Rodríguez, Paulo Villalobos, Joaquín Valenzuela, David Villegas}
 \date{\today}
 
 \begin{document}
@@ -100,15 +100,17 @@ donde el numerador $\mathbf{u} \cdot \mathbf{v}$ terminaría representando el pr
 
 \subsubsection{Coseno frente a la distancia euclidiana}
 
-Una pregunta natural que surge en este punto es por qué preferimos calcular el coseno del ángulo en lugar de usar la distancia en línea recta (distancia euclidiana) para comparar los textos. La razón de esta elección tiene que ver con la longitud de los documentos. Si tuviéramos un documento corto y un documento largo que hablan exactamente del mismo tema (por ejemplo, fútbol), el documento largo usaría las palabras con frecuencias mucho más altas. Como resultado, su vector terminaría siendo mucho más largo, situando su punto muy lejos en el espacio en comparación con el vector del documento corto. 
+Una pregunta natural que surge en este punto es por qué preferimos calcular el coseno del ángulo en lugar de usar la distancia en línea recta (distancia euclidiana) para comparar los textos. La razón de esta elección tiene que ver con la longitud de los documentos. Si tuviéramos un documento corto y un documento largo que hablan exactamente del mismo tema (por ejemplo, fútbol), el documento largo usaría las palabras con mucha más frecuencia. Como resultado, su vector terminaría siendo mucho más largo, situando su punto muy lejos en el espacio en comparación con el vector del documento corto. 
 
 Si usáramos la distancia euclidiana, esta diferencia de largo produciría una distancia muy grande entre ambos puntos, lo que nos llevaría a pensar que son textos muy diferentes, lo que afectaría la precisión de la búsqueda. Al usar la similitud coseno, el cálculo ignora por completo el largo de los vectores y evalúa únicamente la dirección de las flechas. De esta forma, logramos comparar los textos por su temática sin importar si uno es mucho más largo que el otro.
+
+\textbf{Nota sobre la normalización}: Dado que la fórmula de la similitud coseno ya divide el producto punto por el largo de los vectores, realiza su propia normalización geométrica. Esto significa que el resultado final del coseno será exactamente idéntico ya sea que calculemos la fórmula usando conteos crudos de palabras o usando las frecuencias relativas (TF) previamente normalizadas. Sin embargo, decidimos aplicar la normalización TF en un paso previo porque nos permite que los vectores individuales tengan un significado por sí mismos (mostrando la proporción de cada palabra en el texto) y para mantener la coherencia con el procesamiento interno del código del buscador.
 
 \subsubsection{Interpretación geométrica del ángulo y rango de valores}
 
 El ángulo $\theta$ entre los vectores nos da una interpretación geométrica muy directa de la relación entre los documentos, lo que se traduce en un rango de valores específico:
 \begin{itemize}
-    \item \textbf{Coseno igual a 1}: Ocurre cuando el ángulo es de $0^\circ$, lo que implica que ambos vectores apuntan exactamente en la misma dirección. Este valor máximo indica que los documentos comparten las mismas palabras en proporciones similares.
+    \item \textbf{Coseno igual a 1}: Ocurre cuando el ángulo es de $0^\circ$, lo que implica que ambos vectores apuntan exactamente en la misma dirección. Este valor máximo indica que los documentos comparten las mismas palabras en exactamente las mismas proporciones.
     \item \textbf{Coseno igual a 0}: Ocurre cuando el ángulo es de $90^\circ$. En este caso, los vectores terminan siendo perpendiculares u \textbf{ortogonales}, lo que significa que los documentos no comparten ni una sola palabra de nuestro vocabulario y, por lo tanto, no tienen ninguna relación temática.
     \item \textbf{Coseno igual a -1}: Ocurre cuando el ángulo es de $180^\circ$, lo que indicaría que los vectores apuntan en direcciones opuestas. Sin embargo, dado que en el análisis de textos trabajamos en el ortante no negativo $\mathbb{R}^n_+$, es imposible que una palabra tenga una frecuencia negativa. Como resultado, los vectores nunca pueden apuntar en direcciones opuestas, lo que significa que la similitud coseno en nuestro buscador semántico queda limitada estrictamente al rango entre $0$ y $1$.
 \end{itemize}
@@ -184,6 +186,43 @@ Una vez calculados el producto punto y las normas, usamos la fórmula de la simi
 El valor obtenido para la similitud coseno termina siendo exactamente $\frac{1}{3} \approx 0.333$. Dado que el rango de la similitud coseno va desde $0$ hasta $1$ en nuestro espacio de documentos, este resultado muestra una coincidencia baja o moderada entre los textos.
 
 Geométricamente, esto significa que los vectores están separados por un ángulo de aproximadamente $70.5^\circ$ ($\arccos(0.333) \approx 70.5^\circ$). Desde el punto de vista del significado, el resultado es coherente: ambos documentos comparten únicamente la acción (la palabra ``come''), pero difieren en el sujeto (``gato'' frente a ``perro'') y en el objeto (``pescado'' frente a ``carne''). De esta forma, el modelo matemático es capaz de identificar que los textos guardan cierta relación, pero que no son idénticos.
+
+\newpage
+\section{La Matriz Documento-Término}
+
+\subsection{Construcción de la matriz y dispersión}
+
+Una vez que hemos representado cada documento individual como un vector matemático, podemos agrupar todos los textos de nuestro corpus en una sola gran estructura algebraica conocida como la matriz documento-término. Esta matriz se construye alineando los vectores de los documentos uno debajo del otro. Como resultado, obtenemos una matriz bidimensional donde cada fila representa un documento completo y cada columna representa una palabra única del vocabulario. 
+
+Si llamamos $m$ a la cantidad de documentos y $n$ a la cantidad de palabras del vocabulario, la matriz resultante tendrá un tamaño de $m \times n$. 
+
+Un fenómeno matemático muy particular que ocurre con esta matriz es su alta \textbf{dispersión} (o \textit{sparsidad}). Dado que cualquier documento típico utiliza apenas una pequeña fracción de todas las palabras disponibles en el vocabulario general (la mayoría de las palabras de un diccionario no aparecen en un texto corto), casi todos los valores de los vectores serán exactamente cero. Mientras más grande sea el corpus de textos, más palabras nuevas se agregarán al vocabulario general, haciendo que la cantidad de ceros en la matriz crezca enormemente.
+
+\subsection{Análisis del corpus del equipo y orquestación}
+
+Para poner a prueba nuestro buscador semántico, el equipo de investigación reunió un corpus de 16 documentos cortos. Estos textos se dividen en cuatro temáticas principales: historia, matemáticas, naturaleza y tecnología (cuatro textos por cada tema). 
+
+Al aplicar el proceso de limpieza y extracción de palabras (preprocesamiento) sobre los 16 archivos de texto, nuestro sistema detectó un vocabulario exacto de 250 palabras únicas. Con estos datos, la matriz documento-término generada por el programa terminó teniendo un tamaño de $16 \times 250$. Al analizar internamente los valores de esta matriz, observamos que el nivel de dispersión alcanzó un 92.80\%; es decir, más de nueve de cada diez celdas en la matriz albergan un cero.
+
+El proceso completo para leer los archivos, limpiarlos y construir la matriz de frecuencias se puede observar en el siguiente fragmento de código de nuestro proyecto:
+
+\begin{verbatim}
+import glob
+from src.core.preprocessing import preprocess
+from src.core.vectorizer import build_vocabulary, build_tf_matrix
+
+corpus_files = sorted(glob.glob('data/corpus/*.txt'))
+documentos = []
+
+for filepath in corpus_files:
+    with open(filepath, 'r', encoding='utf-8') as f:
+        texto = f.read()
+        tokens = preprocess(texto)
+        documentos.append(tokens)
+
+vocabulario = build_vocabulary(documentos)
+matriz_documento_termino = build_tf_matrix(documentos, vocabulario)
+\end{verbatim}
 
 \end{document}
 
