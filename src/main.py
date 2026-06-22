@@ -1,5 +1,11 @@
 import argparse
+import sys
 from pathlib import Path
+
+# Permite correr de las dos formas: "python -m src.main" y "python src/main.py".
+# Agrega la raiz del proyecto al path para que "import src..." funcione aunque
+# se ejecute el archivo directamente (o desde el boton Run del editor).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.core.preprocessing import preprocess
 from src.core.search import search
