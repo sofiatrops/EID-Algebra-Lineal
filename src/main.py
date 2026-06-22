@@ -1,8 +1,8 @@
 import argparse
 from pathlib import Path
 
-from src.core.preprocessing import preprocess
-from src.core.search import search
+from core.preprocessing import preprocess
+from core.search import search
 
 
 def load_corpus(corpus_dir: str) -> tuple[list[str], list[str]]:

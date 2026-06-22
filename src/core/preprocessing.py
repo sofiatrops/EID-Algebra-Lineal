@@ -32,8 +32,8 @@ def normalize(text:str) -> str:
             result+=letra
     return result
 def tokenize(text:str) -> list[str]:
-    letras = [token for token in re.findall(r'\w+', text) if len(token) > 1]
-    return letras
+    tokens = [token for token in re.findall(r'\w+', text) if len(token) > 1]
+    return tokens
 
 def remove_stopwords(tokens,stopwords=STOPWORDS) -> list[str]:
     removed =list(filter(lambda token: token not in stopwords, tokens))
