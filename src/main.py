@@ -1,8 +1,8 @@
 import argparse
 from pathlib import Path
 
-from core.preprocessing import preprocess
-from core.search import search
+from src.core.preprocessing import preprocess
+from src.core.search import search
 
 
 def load_corpus(corpus_dir: str) -> tuple[list[str], list[str]]:
@@ -42,10 +42,13 @@ def main():
     names, documents = load_corpus(args.corpus)
     corpus_tokens = [preprocess(doc) for doc in documents]
 
+    # search() usa "idf" internamente; en la CLI lo exponemos como "tfidf"
+    search_method = "idf" if args.method == "tfidf" else "tf"
+
     def run_query(query_text: str):
         query_tokens = preprocess(query_text)
         results = search(corpus_tokens, query_tokens,
-                         method=args.method, top_k=args.top_k)
+                         method=search_method, top_k=args.top_k)
         print(f"\nResultados ({args.method.upper()}):")
         print_table(results, names)
 
