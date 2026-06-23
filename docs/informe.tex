@@ -8,6 +8,33 @@
 \geometry{margin=1in}
 \usepackage[hidelinks]{hyperref}
 \usepackage{graphicx}
+\usepackage{listings}
+
+% Estilo de código en blanco y negro (sin colores), con números de línea.
+\lstdefinestyle{pythonbn}{
+    language=Python,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\bfseries,
+    commentstyle=\itshape,
+    stringstyle=\ttfamily,
+    numbers=left,
+    numberstyle=\tiny,
+    numbersep=8pt,
+    stepnumber=1,
+    frame=single,
+    framesep=4pt,
+    breaklines=true,
+    showstringspaces=false,
+    captionpos=b,
+    tabsize=4,
+    aboveskip=10pt,
+    belowskip=10pt,
+    literate=%
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {¿}{{?`}}1 {¡}{{!`}}1
+}
+\lstset{style=pythonbn}
 
 \begin{document}
 
@@ -291,9 +318,170 @@ El programa se organiza en módulos con responsabilidades bien delimitadas. Esta
 
     \item \textbf{\texttt{similarity.py}}: Implementa las operaciones vectoriales básicas a mano: el producto punto, la norma euclidiana y la similitud coseno. También incluye una función que calcula la similitud de una consulta contra todas las filas de la matriz en una sola llamada.
 
+    \item \textbf{\texttt{search.py}}: Une todo lo anterior. Construye el vocabulario y la matriz a partir del corpus, vectoriza la consulta con el mismo proceso, calcula la similitud coseno contra cada documento y devuelve los más parecidos ordenados por score.
 \end{itemize}
 
 El flujo completo del programa es: cargar los archivos del corpus, preprocesar cada texto, construir el vocabulario y la matriz, recibir una consulta, vectorizarla con el mismo proceso, calcular su similitud contra todos los documentos y devolver los resultados ordenados por score.
+
+\subsection{Implementación de los módulos}
+
+A continuación se muestra el código real de cada módulo, comentado para explicar cómo se conecta con las ideas matemáticas de las secciones anteriores. Todo el cálculo vectorial está hecho directamente con NumPy, sin usar bibliotecas que ya traigan la vectorización resuelta.
+
+\subsubsection{Preprocesamiento del texto}
+
+Antes de poder vectorizar, hay que dejar cada texto en una forma uniforme. El módulo \texttt{preprocessing.py} se encarga de eso en tres pasos: normaliza (minúsculas y sin acentos), separa en palabras y descarta las stopwords. La normalización de acentos se hace con la descomposición Unicode \texttt{NFKD}, que separa cada letra acentuada en la letra base más un signo aparte; luego se eliminan esos signos (categoría \texttt{Mn}).
+
+\begin{lstlisting}[caption={Limpieza y tokenización del texto (\texttt{preprocessing.py}).}]
+import unicodedata
+import re
+
+def normalize(text: str) -> str:
+    text = text.lower()
+    te = unicodedata.normalize('NFKD', text)  # separa letra de acentos
+    result = ""
+    for letra in te:
+        categoria = unicodedata.category(letra)
+        if categoria != 'Mn':  # si no es un acento, se conserva
+            result += letra
+    return result
+
+def tokenize(text: str) -> list[str]:
+    # \w+ extrae secuencias de letras/numeros; se descartan tokens de 1 caracter
+    tokens = [token for token in re.findall(r'\w+', text) if len(token) > 1]
+    return tokens
+
+def remove_stopwords(tokens, stopwords=STOPWORDS) -> list[str]:
+    return list(filter(lambda token: token not in stopwords, tokens))
+
+def preprocess(text: str, stopword=STOPWORDS) -> list[str]:
+    return remove_stopwords(tokenize(normalize(text)), stopword)
+\end{lstlisting}
+
+El resultado de \texttt{preprocess} es la lista de palabras con significado de un documento, que es justo lo que necesita el siguiente módulo para contar frecuencias.
+
+\subsubsection{Construcción del vocabulario y de la matriz}
+
+El módulo \texttt{vectorizer.py} toma los documentos ya preprocesados y construye dos cosas: el vocabulario (todas las palabras únicas ordenadas alfabéticamente) y la matriz documento-término. La matriz se llena contando cuántas veces aparece cada palabra del vocabulario en cada documento, que es exactamente la representación TF descrita en la primera sección.
+
+\begin{lstlisting}[caption={Vocabulario y matriz de frecuencias (\texttt{vectorizer.py}).}]
+import numpy as np
+
+def build_vocabulary(documents: list[list[str]]) -> list[str]:
+    vocabulary = []
+    documents = sum(documents, [])  # une todas las listas en una sola
+    for token in documents:
+        if token not in vocabulary:
+            vocabulary.append(token)
+    return sorted(vocabulary)
+
+def build_tf_matrix(documents, vocabulary) -> np.ndarray:
+    matrix = np.zeros((len(documents), len(vocabulary)))
+    for i in range(len(documents)):
+        for j in range(len(vocabulary)):
+            matrix[i, j] = documents[i].count(vocabulary[j])
+    return matrix
+\end{lstlisting}
+
+Sobre esta base se implementa también TF-IDF. La idea es ponderar cada frecuencia por el factor IDF $\log(N / df)$, donde $N$ es el número de documentos y $df$ es en cuántos documentos aparece el término. Así las palabras que están en casi todos los textos pesan poco y las raras pesan más.
+
+\begin{lstlisting}[caption={Ponderación TF-IDF (\texttt{vectorizer.py}).}]
+def build_idf_matrix(documents, vocabulary, smoothing=True) -> np.ndarray:
+    idf = np.zeros(len(vocabulary))
+    tf = build_tf_matrix(documents, vocabulary)
+    for j in range(len(vocabulary)):
+        df = np.count_nonzero(tf[:, j])  # en cuantos documentos aparece
+        if smoothing:
+            idf[j] = np.log(len(documents) / (df + 1.0))  # +1 evita div/0
+        elif df > 0:
+            idf[j] = np.log(len(documents) / df)
+    return idf
+
+def build_tfidf_matrix(documents, vocabulary, smoothing=True) -> np.ndarray:
+    tf = build_tf_matrix(documents, vocabulary)
+    totales = tf.sum(axis=1, keepdims=True)
+    totales[totales == 0] = 1.0       # documentos vacios: evita div/0
+    tf_norm = tf / totales            # frecuencia relativa por documento
+    idf = build_idf_matrix(documents, vocabulary, smoothing)
+    return tf_norm * idf
+\end{lstlisting}
+
+\subsubsection{Operaciones vectoriales y similitud coseno}
+
+El módulo \texttt{similarity.py} implementa a mano las tres operaciones que aparecen en la fórmula del coseno: el producto punto, la norma euclidiana y, con ellas, la similitud coseno. No se usa ninguna función de alto nivel que entregue el coseno directo; se arma con sumas y raíces para dejar en claro la matemática detrás.
+
+\begin{lstlisting}[caption={Producto punto, norma y similitud coseno (\texttt{similarity.py}).}]
+import numpy as np
+
+def dot_product(u, v) -> float:        # u . v = sum(u_i * v_i)
+    u = np.asarray(u, dtype=float)
+    v = np.asarray(v, dtype=float)
+    if u.shape != v.shape:
+        raise ValueError("Los vectores deben tener la misma dimension")
+    return float(np.sum(u * v))
+
+def norm(v) -> float:                  # ||v|| = sqrt(sum(v_i^2))
+    v = np.asarray(v, dtype=float)
+    return float(np.sqrt(np.sum(v ** 2)))
+
+def cosine_similarity(u, v) -> float:  # cos(theta) = (u . v) / (||u|| ||v||)
+    norm_u = norm(u)
+    norm_v = norm(v)
+    if norm_u == 0.0 or norm_v == 0.0:  # vector nulo -> sin direccion definida
+        return 0.0
+    return dot_product(u, v) / (norm_u * norm_v)
+\end{lstlisting}
+
+El detalle de devolver $0.0$ cuando algún vector es nulo es importante en la práctica: ocurre cuando una consulta no comparte ninguna palabra con un documento, y evita una división por cero. Esto explica por qué en el análisis muchos documentos aparecen con score exactamente cero.
+
+\subsubsection{Búsqueda: uniendo las piezas}
+
+Finalmente, \texttt{search.py} conecta todo. Recibe el corpus ya tokenizado y la consulta tokenizada, construye el vocabulario y la matriz, vectoriza la consulta usando el mismo vocabulario (paso clave: la consulta debe vivir en el mismo espacio que los documentos), calcula la similitud contra cada fila y devuelve los \texttt{top\_k} resultados ordenados.
+
+\begin{lstlisting}[caption={Motor de búsqueda (\texttt{search.py}).}]
+from src.core.vectorizer import build_vocabulary, build_tf_matrix, build_idf_matrix
+from src.core.similarity import cosine_similarity
+
+def search(corpus_tokens, query_tokens, method="tf", top_k=5):
+    vocabulary = build_vocabulary(corpus_tokens)
+    matriz = build_tf_matrix(corpus_tokens, vocabulary)
+    # la consulta se vectoriza con EL MISMO vocabulario que el corpus
+    query_vector = build_tf_matrix([query_tokens], vocabulary)[0]
+    if method == "idf":
+        idf_vector = build_idf_matrix(corpus_tokens, vocabulary)
+        matriz = matriz * idf_vector
+        query_vector = query_vector * idf_vector
+    elif method != "tf":
+        raise ValueError("El metodo debe ser 'tf' o 'idf'")
+    scores = []
+    for i in range(len(matriz)):
+        sim = cosine_similarity(query_vector, matriz[i])
+        scores.append((i, sim))
+    # ordena de mayor a menor score y devuelve los top_k
+    return sorted(scores, key=lambda x: x[1], reverse=True)[:top_k]
+\end{lstlisting}
+
+\subsection{Ejecución del buscador desde la línea de comandos}
+
+Sobre estos módulos se construyó una interfaz de línea de comandos (\texttt{main.py}) que carga el corpus, recibe una consulta y muestra el ranking. Por ejemplo, para buscar documentos relacionados con inteligencia artificial usando frecuencia de términos, se ejecuta:
+
+\begin{lstlisting}[language=bash, numbers=none, caption={Llamada al buscador desde la terminal.}]
+python -m src.main --query "inteligencia artificial aprendizaje automatico" --method tf --top-k 5
+\end{lstlisting}
+
+Y la salida real del programa es:
+
+\begin{lstlisting}[numbers=none, caption={Resultado devuelto por el buscador para la consulta anterior.}]
+Resultados (TF):
+Documento                        Score
+----------------------------------------
+tecnologia_01.txt               0.5213
+tecnologia_04.txt               0.2236
+historia_01.txt                 0.0000
+historia_02.txt                 0.0000
+historia_03.txt                 0.0000
+\end{lstlisting}
+
+El programa identifica correctamente los dos documentos de tecnología como los más relevantes y asigna score cero al resto, que no comparte ninguna palabra con la consulta. Este es el mismo procedimiento que se repite para cada una de las consultas analizadas más adelante.
 
 \subsection{Análisis de consultas}
 
