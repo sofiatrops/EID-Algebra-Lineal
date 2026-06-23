@@ -6,19 +6,55 @@
 \usepackage{amsfonts}
 \usepackage{geometry}
 \geometry{margin=1in}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{graphicx}
-
-\title{Buscador Semántico Simple \\ \large Proyecto de Investigación 2 - Álgebra Lineal para la Computación}
-\author{Paulo Villalobos}
-\date{\today}
 
 \begin{document}
 
-\maketitle
-\newpage
+\begin{titlepage}
+    \centering
+    \includegraphics[width=0.85\textwidth]{logo_facultad.png}\\[2cm]
+
+    {\large Universidad Católica de Temuco}\\[0.25cm]
+    {\large Facultad de Ingeniería}\\[0.25cm]
+    {\large Álgebra Lineal para la Computación}\\[2.5cm]
+
+    \rule{\textwidth}{0.4pt}\\[0.5cm]
+    {\Huge \bfseries Buscador Semántico Simple}\\[0.5cm]
+    {\large Proyecto de Investigación 2 --- Representación Vectorial de Texto}\\[0.4cm]
+    \rule{\textwidth}{0.4pt}\\[3cm]
+
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushleft}
+            \textbf{Integrantes:}\\
+            Denys Rodríguez\\
+            Paulo Villalobos\\
+            Joaquín Valenzuela\\
+            David Villegas
+        \end{flushleft}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushright}
+            \textbf{Profesora:}\\
+            Constanza Estrada
+        \end{flushright}
+    \end{minipage}
+
+    \vfill
+    {\large 23 de junio de 2026}
+\end{titlepage}
+
 \tableofcontents
 \newpage
+
+\section{Introducción}
+
+Cuando usamos un buscador web o le preguntamos algo a un asistente virtual, esperamos que entienda lo que queremos decir y no solo que busque las palabras exactas que escribimos. Detrás de esa idea hay un problema que parece simple pero no lo es: una computadora no entiende el lenguaje, solo sabe trabajar con números. Por eso, antes de poder comparar dos textos, primero hay que encontrar una forma de convertir las palabras en algo que la máquina sí pueda manipular.
+
+El álgebra lineal entrega una respuesta natural a este problema. Si representamos cada documento como un vector dentro de un espacio de muchas dimensiones, comparar textos deja de ser una tarea de lenguaje y pasa a ser una tarea geométrica: dos textos que hablan de lo mismo apuntan hacia direcciones parecidas, y eso se puede medir con operaciones que ya conocemos, como el producto punto y el ángulo entre vectores. Esta misma idea es la base de los motores de búsqueda, los sistemas de recomendación y buena parte de las aplicaciones de inteligencia artificial que usamos a diario.
+
+A partir de esa idea construimos un buscador semántico simple: un programa que toma un conjunto de textos, los transforma en vectores y, dada una consulta, devuelve los documentos más parecidos usando la similitud coseno. Lo que sigue explica primero las matemáticas que lo hacen posible y después cómo se ven esas ideas funcionando sobre un corpus real de documentos.
 
 \section{Representación de palabras y documentos como vectores}
 
@@ -100,15 +136,17 @@ donde el numerador $\mathbf{u} \cdot \mathbf{v}$ terminaría representando el pr
 
 \subsubsection{Coseno frente a la distancia euclidiana}
 
-Una pregunta natural que surge en este punto es por qué preferimos calcular el coseno del ángulo en lugar de usar la distancia en línea recta (distancia euclidiana) para comparar los textos. La razón de esta elección tiene que ver con la longitud de los documentos. Si tuviéramos un documento corto y un documento largo que hablan exactamente del mismo tema (por ejemplo, fútbol), el documento largo usaría las palabras con frecuencias mucho más altas. Como resultado, su vector terminaría siendo mucho más largo, situando su punto muy lejos en el espacio en comparación con el vector del documento corto. 
+Una pregunta natural que surge en este punto es por qué preferimos calcular el coseno del ángulo en lugar de usar la distancia en línea recta (distancia euclidiana) para comparar los textos. La razón de esta elección tiene que ver con la longitud de los documentos. Si tuviéramos un documento corto y un documento largo que hablan exactamente del mismo tema (por ejemplo, fútbol), el documento largo usaría las palabras con mucha más frecuencia. Como resultado, su vector terminaría siendo mucho más largo, situando su punto muy lejos en el espacio en comparación con el vector del documento corto. 
 
 Si usáramos la distancia euclidiana, esta diferencia de largo produciría una distancia muy grande entre ambos puntos, lo que nos llevaría a pensar que son textos muy diferentes, lo que afectaría la precisión de la búsqueda. Al usar la similitud coseno, el cálculo ignora por completo el largo de los vectores y evalúa únicamente la dirección de las flechas. De esta forma, logramos comparar los textos por su temática sin importar si uno es mucho más largo que el otro.
+
+\textbf{Nota sobre la normalización}: Dado que la fórmula de la similitud coseno ya divide el producto punto por el largo de los vectores, realiza su propia normalización geométrica. Esto significa que el resultado final del coseno será exactamente idéntico ya sea que calculemos la fórmula usando conteos crudos de palabras o usando las frecuencias relativas (TF) previamente normalizadas. Sin embargo, decidimos aplicar la normalización TF en un paso previo porque nos permite que los vectores individuales tengan un significado por sí mismos (mostrando la proporción de cada palabra en el texto) y para mantener la coherencia con el procesamiento interno del código del buscador.
 
 \subsubsection{Interpretación geométrica del ángulo y rango de valores}
 
 El ángulo $\theta$ entre los vectores nos da una interpretación geométrica muy directa de la relación entre los documentos, lo que se traduce en un rango de valores específico:
 \begin{itemize}
-    \item \textbf{Coseno igual a 1}: Ocurre cuando el ángulo es de $0^\circ$, lo que implica que ambos vectores apuntan exactamente en la misma dirección. Este valor máximo indica que los documentos comparten las mismas palabras en proporciones similares.
+    \item \textbf{Coseno igual a 1}: Ocurre cuando el ángulo es de $0^\circ$, lo que implica que ambos vectores apuntan exactamente en la misma dirección. Este valor máximo indica que los documentos comparten las mismas palabras en exactamente las mismas proporciones.
     \item \textbf{Coseno igual a 0}: Ocurre cuando el ángulo es de $90^\circ$. En este caso, los vectores terminan siendo perpendiculares u \textbf{ortogonales}, lo que significa que los documentos no comparten ni una sola palabra de nuestro vocabulario y, por lo tanto, no tienen ninguna relación temática.
     \item \textbf{Coseno igual a -1}: Ocurre cuando el ángulo es de $180^\circ$, lo que indicaría que los vectores apuntan en direcciones opuestas. Sin embargo, dado que en el análisis de textos trabajamos en el ortante no negativo $\mathbb{R}^n_+$, es imposible que una palabra tenga una frecuencia negativa. Como resultado, los vectores nunca pueden apuntar en direcciones opuestas, lo que significa que la similitud coseno en nuestro buscador semántico queda limitada estrictamente al rango entre $0$ y $1$.
 \end{itemize}
@@ -185,6 +223,171 @@ El valor obtenido para la similitud coseno termina siendo exactamente $\frac{1}{
 
 Geométricamente, esto significa que los vectores están separados por un ángulo de aproximadamente $70.5^\circ$ ($\arccos(0.333) \approx 70.5^\circ$). Desde el punto de vista del significado, el resultado es coherente: ambos documentos comparten únicamente la acción (la palabra ``come''), pero difieren en el sujeto (``gato'' frente a ``perro'') y en el objeto (``pescado'' frente a ``carne''). De esta forma, el modelo matemático es capaz de identificar que los textos guardan cierta relación, pero que no son idénticos.
 
+\newpage
+\section{La Matriz Documento-Término}
+
+\subsection{Construcción de la matriz y dispersión}
+
+Una vez que hemos representado cada documento individual como un vector matemático, podemos agrupar todos los textos de nuestro corpus en una sola gran estructura algebraica conocida como la matriz documento-término. Esta matriz se construye alineando los vectores de los documentos uno debajo del otro. Como resultado, obtenemos una matriz bidimensional donde cada fila representa un documento completo y cada columna representa una palabra única del vocabulario. 
+
+Si llamamos $m$ a la cantidad de documentos y $n$ a la cantidad de palabras del vocabulario, la matriz resultante tendrá un tamaño de $m \times n$. 
+
+Un fenómeno matemático muy particular que ocurre con esta matriz es su alta \textbf{dispersión} (o \textit{sparsidad}). Dado que cualquier documento típico utiliza apenas una pequeña fracción de todas las palabras disponibles en el vocabulario general (la mayoría de las palabras de un diccionario no aparecen en un texto corto), casi todos los valores de los vectores serán exactamente cero. Mientras más grande sea el corpus de textos, más palabras nuevas se agregarán al vocabulario general, haciendo que la cantidad de ceros en la matriz crezca enormemente.
+
+\subsection{Análisis del corpus del equipo y orquestación}
+
+Para poner a prueba nuestro buscador semántico, el equipo de investigación reunió un corpus de 16 documentos cortos. Estos textos se dividen en cuatro temáticas principales: historia, matemáticas, naturaleza y tecnología (cuatro textos por cada tema). 
+
+Cada tema aporta cuatro textos breves de un par de oraciones. Por ejemplo, el primer texto de historia describe la civilización egipcia y las pirámides de Giza, mientras que el primer texto de matemáticas habla del álgebra lineal, los espacios vectoriales y las matrices. Los 16 documentos que forman el corpus son los siguientes:
+
+\begin{itemize}
+    \item \textbf{Historia:} civilización egipcia, Imperio Romano, Revolución Francesa y Segunda Guerra Mundial.
+    \item \textbf{Matemáticas:} álgebra lineal, matrices, producto punto y similitud coseno.
+    \item \textbf{Naturaleza:} ecosistemas, cambio climático, bosques tropicales y energías renovables.
+    \item \textbf{Tecnología:} inteligencia artificial, motores de búsqueda, procesamiento de lenguaje natural y Python.
+\end{itemize}
+
+Al aplicar el proceso de limpieza y extracción de palabras (preprocesamiento) sobre los 16 archivos de texto, nuestro sistema detectó un vocabulario exacto de 250 palabras únicas. Estas palabras son las que sobreviven a la limpieza y se ordenan alfabéticamente; las primeras del vocabulario son, por ejemplo, ``acueductos'', ``algebra'', ``algoritmos'', ``angulo'', ``aprendizaje'' y así sucesivamente hasta completar los 250 términos. Con estos datos, la matriz documento-término generada por el programa terminó teniendo un tamaño de $16 \times 250$: una fila por cada documento y una columna por cada palabra del vocabulario. Al analizar internamente los valores de esta matriz, observamos que el nivel de dispersión alcanzó un 92.80\%; es decir, más de nueve de cada diez celdas en la matriz albergan un cero. La forma completa de esta matriz se puede apreciar de manera visual más adelante, en el mapa de calor de la sección de resultados.
+
+El proceso completo para leer los archivos, limpiarlos y construir la matriz de frecuencias se puede observar en el siguiente fragmento de código de nuestro proyecto:
+
+\begin{verbatim}
+import glob
+from src.core.preprocessing import preprocess
+from src.core.vectorizer import build_vocabulary, build_tf_matrix
+
+corpus_files = sorted(glob.glob('data/corpus/*.txt'))
+documentos = []
+
+for filepath in corpus_files:
+    with open(filepath, 'r', encoding='utf-8') as f:
+        texto = f.read()
+        tokens = preprocess(texto)
+        documentos.append(tokens)
+
+vocabulario = build_vocabulary(documentos)
+matriz_documento_termino = build_tf_matrix(documentos, vocabulario)
+\end{verbatim}
+
+\newpage
+\section{Implementación y análisis del buscador}
+
+\subsection{El álgebra lineal como motor de búsqueda}
+
+La idea detrás de nuestro buscador es relativamente directa: si los documentos y las consultas están representados como vectores en el mismo espacio, comparar una consulta contra un conjunto de documentos se reduce a calcular ángulos. Mientras más pequeño sea el ángulo entre dos vectores, más similares son los textos que representan.
+
+Esta forma de comparar tiene una ventaja algebraica concreta. En lugar de recorrer los documentos uno a uno y revisar cuántas palabras coinciden manualmente, podemos calcular la similitud coseno entre el vector de la consulta y cada fila de la matriz documento-término. El resultado es un vector de scores, donde cada posición indica qué tan relevante es el documento correspondiente para la consulta recibida. Ordenar ese vector de mayor a menor basta para producir el ranking final.
+
+El hecho de que la similitud coseno dependa únicamente de la dirección de los vectores (y no de su magnitud) es especialmente útil aquí. Un documento largo que repite las palabras de la consulta muchas veces no debería estar automáticamente por encima de un documento corto que las menciona con igual proporción. El coseno normaliza esta diferencia de forma natural.
+
+\subsection{Arquitectura del programa}
+
+El programa se organiza en módulos con responsabilidades bien delimitadas. Esta separación facilita el desarrollo por partes y permite probar cada componente de forma independiente.
+
+\begin{itemize}
+    \item \textbf{\texttt{preprocessing.py}}: Recibe un texto crudo y lo convierte en una lista de tokens limpios. Para esto, normaliza el texto a minúsculas, elimina acentos mediante la descomposición Unicode de caracteres, extrae solo las secuencias alfabéticas y filtra las palabras vacías definidas en la lista de stopwords.
+
+    \item \textbf{\texttt{vectorizer.py}}: A partir de los documentos ya preprocesados, construye el vocabulario ordenado y genera la matriz documento-término. Implementa dos estrategias de vectorización: frecuencia de términos (\textit{TF}) y TF-IDF, ambas implementadas directamente con NumPy.
+
+    \item \textbf{\texttt{similarity.py}}: Implementa las operaciones vectoriales básicas a mano: el producto punto, la norma euclidiana y la similitud coseno. También incluye una función que calcula la similitud de una consulta contra todas las filas de la matriz en una sola llamada.
+
+\end{itemize}
+
+El flujo completo del programa es: cargar los archivos del corpus, preprocesar cada texto, construir el vocabulario y la matriz, recibir una consulta, vectorizarla con el mismo proceso, calcular su similitud contra todos los documentos y devolver los resultados ordenados por score.
+
+\subsection{Análisis de consultas}
+
+Para evaluar el comportamiento del buscador, se realizaron cinco consultas representativas sobre el corpus de 16 documentos. Los resultados se obtuvieron usando la estrategia de vectorización TF, que asigna a cada término su frecuencia relativa dentro del documento.
+
+\begin{enumerate}
+
+    \item \textbf{Consulta: ``pirámides Egipto historia antigua''} \\
+    El buscador devolvió primero el texto del Imperio Romano (\texttt{historia\_02}) con un score de $0.26$, seguido del texto de la civilización egipcia (\texttt{historia\_01}) con $0.14$; el resto del corpus quedó en cero. Llama la atención que el texto romano gane al egipcio aunque la consulta menciona ``pirámides'' y ``Egipto''. La razón es reveladora: las palabras ``historia'' y ``antigua'' aparecen juntas y literales en el texto romano, mientras que ``Egipto'' nunca aparece como tal (el texto dice ``egipcia'' y ``egipcios'', que para el modelo son palabras distintas). Este caso muestra con claridad que el buscador empareja formas exactas de palabras, no temas ni significados.
+
+    \item \textbf{Consulta: ``vectores matrices álgebra lineal''} \\
+    Los cuatro documentos de matemáticas ocuparon las primeras posiciones, con \texttt{matematicas\_01} a la cabeza ($0.47$), seguido de \texttt{matematicas\_03} ($0.27$), \texttt{matematicas\_02} ($0.12$) y \texttt{matematicas\_04} ($0.11$). Ningún documento de otra categoría obtuvo un valor distinto de cero. Este es el comportamiento ideal: la consulta usa el vocabulario propio del tema y el modelo separa limpiamente esa categoría del resto.
+
+    \item \textbf{Consulta: ``ecosistema biodiversidad naturaleza''} \\
+    Solo un documento obtuvo un score distinto de cero: \texttt{naturaleza\_01} con $0.25$. Los otros tres textos de naturaleza quedaron en cero, lo que al principio sorprende. La explicación vuelve a estar en las formas de las palabras: el texto dice ``ecosistemas'' (plural) y ``naturales'', pero la consulta usa ``ecosistema'' y ``naturaleza'', que el modelo trata como términos diferentes. Al final, lo único que coincidió de verdad fue ``biodiversidad''. Esto deja en evidencia que el buscador es sensible incluso a detalles como el singular y el plural, porque no aplica ninguna reducción de las palabras a su raíz.
+
+    \item \textbf{Consulta: ``inteligencia artificial aprendizaje automático''} \\
+    Los documentos de tecnología dominaron el ranking, con \texttt{tecnologia\_01} en primer lugar ($0.52$) y \texttt{tecnologia\_04} en segundo ($0.22$); el resto quedó en cero. Probamos esta misma consulta con TF y con TF-IDF y el ranking fue idéntico, lo que tiene sentido en un corpus tan chico: como casi ningún término aparece en muchos documentos a la vez, la penalización que aplica TF-IDF a las palabras comunes casi no cambia el resultado.
+
+    \item \textbf{Consulta: ``planeta tierra agua recursos naturales''} \\
+    Los documentos de naturaleza volvieron a quedar arriba: \texttt{naturaleza\_01} con $0.43$ y \texttt{naturaleza\_03} con $0.14$, con el resto del corpus en cero. El score del primero es relativamente alto porque concentra varias de las palabras de la consulta (``planeta'', ``tierra''), mientras que las demás coincidencias se reparten en otros textos. Esto muestra una limitación del modelo: cuando la consulta mezcla términos que aparecen en documentos distintos, el buscador no puede distinguir si se busca todo junto o cada cosa por separado.
+
+\end{enumerate}
+
+En general, los resultados muestran que el buscador funciona bien cuando la consulta usa exactamente el vocabulario que aparece en los documentos: en las cinco consultas, el tema correcto quedó siempre en primer lugar y las categorías ajenas se fueron a cero. Los scores no son altos (rara vez pasan de $0.5$) porque las consultas son cortas y comparten pocas palabras con textos que hablan de muchas cosas, pero el orden relativo es el esperado. La recuperación se vuelve menos confiable apenas la consulta usa una forma distinta de una palabra (singular en vez de plural, o un sinónimo), lo que confirma que el modelo compara palabras y no significados.
+
+\subsection{Efecto del tamaño del vocabulario}
+
+El tamaño del vocabulario determina directamente la dimensión de todos los vectores del sistema. Con nuestro corpus de 16 textos, el vocabulario resultó en 250 palabras únicas, lo que produjo vectores de 250 dimensiones.
+
+Este número puede parecer pequeño, pero ya muestra el fenómeno de la sparsidad con claridad: el 92.80\% de los valores de la matriz son ceros. A medida que el corpus crece, esta proporción aumenta aún más, porque cada documento nuevo agrega palabras que no aparecen en los documentos anteriores, expandiendo el vocabulario sin necesariamente aumentar la densidad de cada vector.
+
+Un vocabulario más grande tiene consecuencias en dos direcciones. Por un lado, captura más información y permite distinguir mejor entre documentos con vocabulario especializado. Por otro lado, hace que los vectores sean más dispersos, lo que puede afectar el comportamiento del coseno en casos donde dos documentos apenas comparten términos. En esos casos, el score tiende a quedar cercano a cero incluso cuando los textos son temáticamente parecidos, simplemente porque usan sinónimos distintos.
+
+\subsection{Ventajas y limitaciones del coseno}
+
+La similitud coseno es una medida robusta para comparar documentos porque ignora la longitud de los textos y evalúa únicamente la distribución relativa de sus términos. Esto la hace efectiva para encontrar documentos con vocabulario similar sin importar si uno es más largo que el otro.
+
+Sin embargo, tiene limitaciones importantes que vale la pena entender. La principal es que el modelo no comprende el significado de las palabras, solo detecta si aparecen o no. Dos palabras con el mismo significado pero escritas diferente (``auto'' y ``vehículo'', por ejemplo) son tratadas como dimensiones completamente distintas e independientes en el espacio vectorial. Como resultado, un documento sobre automóviles no necesariamente quedará cerca de uno sobre vehículos si no comparten exactamente las mismas palabras.
+
+Otra limitación es la sensibilidad al vocabulario de la consulta. Si la consulta usa términos que no aparecen en ningún documento del corpus, su vector será el vector nulo y la similitud con cualquier documento será cero. El buscador simplemente no encontrará nada relevante.
+
+La estrategia TF-IDF busca mejorar este panorama al reducir el peso de las palabras muy frecuentes (que aparecen en casi todos los documentos y aportan poca información) y aumentar el peso de los términos más específicos. En teoría, esto produce rankings más precisos cuando el corpus contiene documentos temáticamente diversos. En la práctica, al comparar TF y TF-IDF sobre nuestro corpus, los rankings resultaron casi iguales. Esto se explica por el tamaño reducido del conjunto: como casi ningún término aparece repartido en muchos documentos a la vez, el factor IDF apenas castiga a unas pocas palabras y el resultado se mantiene parecido al de TF. Es razonable esperar que la diferencia se note más en un corpus grande, donde sí existen palabras muy comunes a lo largo de todos los textos.
+
+\subsection{Visualización de los resultados}
+
+% Figuras generadas por el notebook del equipo (docs/figuras/).
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figuras/heatmap_tf.png}
+    \caption{Mapa de calor de la similitud coseno entre los 16 documentos del corpus (vectorización TF).}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figuras/top_term_freq.png}
+    \caption{Términos más frecuentes en el corpus tras el preprocesamiento.}
+\end{figure}
+
+En el mapa de calor se nota con bastante claridad la formación de cuatro bloques a lo largo de la diagonal. Cada bloque agrupa a los documentos de un mismo tema, y dentro de él los valores de similitud son más altos (colores más intensos), mientras que fuera de él los valores caen casi a cero. Esto coincide con lo que esperábamos desde la teoría: los textos de historia comparten palabras entre sí, igual que los de matemáticas, naturaleza y tecnología, y en cambio casi no comparten vocabulario con los de otras categorías. El hecho de que estos bloques aparezcan solos, sin que nadie le dijera al programa a qué tema pertenece cada texto, muestra que la representación vectorial logra capturar la cercanía temática solo a partir de las palabras. También se ven algunos puntos tibios fuera de la diagonal, como entre matemáticas y tecnología, que se explican porque ambos temas comparten términos como ``algoritmo'', ``datos'' o ``vectores''.
+
+En el gráfico de frecuencias se observa que las palabras que más aparecen son términos generales del corpus como ``vectores'', ``datos'', ``matrices'' o ``mundo'', y no palabras vacías como artículos o preposiciones. Esto confirma que el preprocesamiento hizo bien su trabajo: al eliminar las stopwords, las palabras que quedan arriba en el conteo son las que de verdad cargan significado temático. Esa es justamente la información que después permite distinguir un texto de otro.
+
+\newpage
+\section{Reflexión y conclusiones}
+
+Construir el buscador a partir de la frecuencia de términos permitió comprobar que una idea geométrica sencilla alcanza para recuperar información con bastante precisión. Cuando la consulta usa palabras que efectivamente aparecen en los documentos, el modelo ordena los resultados de forma coherente y ubica primero los textos del tema correcto. La gran ventaja de este enfoque es su simpleza: no necesita entrenamiento previo ni grandes cantidades de datos, se apoya solo en contar palabras y medir ángulos, y aun así produce rankings razonables. Además, al trabajar con la similitud coseno, el largo de los documentos deja de ser un problema, porque lo que se compara es la dirección de los vectores y no su tamaño.
+
+Sin embargo, el mismo análisis dejó ver con claridad dónde están los límites de un buscador que se basa únicamente en la frecuencia de términos. El problema de fondo es que el modelo no entiende el significado de las palabras, solo registra si aparecen o no. Por eso trata dos sinónimos como ``auto'' y ``vehículo'' como dimensiones distintas e independientes, y no es capaz de relacionar dos textos que hablan de lo mismo con palabras diferentes. A esto se suma su sensibilidad al vocabulario de la consulta: si alguien busca con términos que no están en ningún documento, el vector de la consulta queda en cero y la similitud con todo el corpus también, de modo que el buscador no devuelve nada. Esto se vio en la consulta que mezclaba términos repartidos en varios textos, donde los scores quedaron bajos porque las palabras no se concentraban en un solo documento. La estrategia TF-IDF ayuda en parte, porque le baja el peso a las palabras muy comunes y se lo sube a las más específicas, pero sigue sin resolver el problema del significado.
+
+Estas mismas ideas, llevadas a una escala mucho mayor, son las que sostienen muchas de las aplicaciones que usamos todos los días. Los motores de búsqueda representan páginas y consultas como vectores para devolver los resultados más relevantes, que es exactamente lo que hace nuestro programa pero con miles de millones de documentos. Los sistemas de recomendación comparan el perfil de un usuario con el de productos o contenidos usando la misma noción de cercanía vectorial. Los chatbots y los modelos de lenguaje van un paso más allá: en lugar de contar palabras, aprenden vectores (los llamados \textit{embeddings}) que sí logran acercar palabras con significados parecidos, lo que resuelve justamente la limitación de los sinónimos que encontramos. Ver esa conexión fue quizás lo más valioso del trabajo: el buscador que construimos es una versión mínima y entendible de una herramienta que está en el corazón de la inteligencia artificial moderna, y permitió comprender desde adentro por qué el álgebra lineal es tan central en el procesamiento de texto.
+
+\newpage
+\section{Anexos}
+
+\subsection{Lenguaje y bibliotecas}
+\begin{itemize}
+    \item \textbf{Lenguaje:} Python 3.10 o superior.
+    \item \textbf{Bibliotecas:} NumPy (operaciones vectoriales y matriciales), Matplotlib y Seaborn (visualizaciones), pytest (pruebas unitarias) y Jupyter (notebook de análisis). scikit-learn se usó solo para validar el TF-IDF en las pruebas, no en el código principal.
+\end{itemize}
+
+\subsection{Código}
+El código fuente está organizado en el repositorio del proyecto: los módulos del buscador en \texttt{src/core/} (preprocesamiento, vectorización, similitud y búsqueda), las pruebas en \texttt{tests/} y el corpus de 16 textos en \texttt{data/corpus/}.
+
+\subsection{Bibliografía}
+\begin{itemize}
+    \item Apuntes y material del curso de Álgebra Lineal para la Computación, Universidad Católica de Temuco.
+    \item Manning, C. D., Raghavan, P. y Schütze, H. (2008). \textit{Introduction to Information Retrieval}. Cambridge University Press. (Modelo de espacio vectorial, similitud coseno y TF-IDF.)
+    \item Documentación oficial de NumPy. \url{https://numpy.org/doc/}
+    \item Documentación oficial de scikit-learn, \texttt{TfidfVectorizer}. \url{https://scikit-learn.org/stable/modules/feature_extraction.html}
+    \item Documentación de Matplotlib y Seaborn para la generación de mapas de calor y gráficos de barras. \url{https://matplotlib.org/} y \url{https://seaborn.pydata.org/}
+\end{itemize}
+
 \end{document}
+
 
 

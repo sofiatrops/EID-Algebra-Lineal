@@ -32,8 +32,8 @@ def normalize(text:str) -> str:
             result+=letra
     return result
 def tokenize(text:str) -> list[str]:
-    letras = [token for token in re.findall(r'\w+', text) if len(token) > 1]
-    return letras
+    tokens = [token for token in re.findall(r'\w+', text) if len(token) > 1]
+    return tokens
 
 def remove_stopwords(tokens,stopwords=STOPWORDS) -> list[str]:
     removed =list(filter(lambda token: token not in stopwords, tokens))
@@ -41,9 +41,3 @@ def remove_stopwords(tokens,stopwords=STOPWORDS) -> list[str]:
 
 def preprocess(text:str,stopword=STOPWORDS) -> list[str]:
     return remove_stopwords(tokenize(normalize(text)),stopword)
-    
-
-text1="Álgebra a Líneal para Computación"
-text2="El niño comió jamón con ñoquerías"
-text3="PROCESAMIENTO de TEXTO con Tildes: á, é, í, ó, ú"
-print(preprocess(text3))
